@@ -40,7 +40,7 @@ void WaypointGlobalPlanner::initialize(std::string name, costmap_2d::Costmap2DRO
     pnh.param("epsilon", epsilon_, 1e-1);
 
     // initialize publishers and subscribers
-    waypoint_sub_ = pnh.subscribe("/clicked_point", 10, &WaypointGlobalPlanner::waypointCallback, this);
+    waypoint_sub_ = pnh.subscribe("/clicked_point", 100, &WaypointGlobalPlanner::waypointCallback, this);
     waypoint_marker_pub_ = pnh.advertise<visualization_msgs::MarkerArray>("waypoints", 1);
     goal_pub_ = nh.advertise<geometry_msgs::PoseStamped>("/move_base_simple/goal", 1);
     plan_pub_ = pnh.advertise<nav_msgs::Path>("global_plan", 1);
