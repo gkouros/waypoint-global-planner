@@ -63,10 +63,12 @@ class WaypointGlobalPlanner : public nav_core::BaseGlobalPlanner
     void waypointCallback(const geometry_msgs::PointStampedConstPtr& waypoint);
 
     /**
-     * @brief Waypoint callback
-     * @param waypoint The received waypoint
+     * @brief External path callback
+     * @param plan The received plan
      */
-    void generatePlanUsingWaypoints(const geometry_msgs::PoseStamped& start_pose, std::vector<geometry_msgs::PoseStamped>& plan);
+    void externalPathCallback(const nav_msgs::PathConstPtr& plan);
+
+    void createAndPublishMarkersFromPath(const std::vector<geometry_msgs::PoseStamped>& path);
 
 
   private:
@@ -77,6 +79,7 @@ class WaypointGlobalPlanner : public nav_core::BaseGlobalPlanner
 
     // subscribers and publishers
     ros::Subscriber waypoint_sub_;
+    ros::Subscriber external_path_sub_;
     ros::Publisher waypoint_marker_pub_;
     ros::Publisher goal_pub_;
     ros::Publisher plan_pub_;
@@ -86,7 +89,7 @@ class WaypointGlobalPlanner : public nav_core::BaseGlobalPlanner
 
     // containers
     std::vector<geometry_msgs::PoseStamped> waypoints_;
-    visualization_msgs::MarkerArray waypoint_markers_;
+    nav_msgs::Path path_;
 
     //flags
     bool clear_waypoints_;
