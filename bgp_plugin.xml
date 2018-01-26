@@ -1,0 +1,9 @@
+<library path="lib/libwaypoint_global_planner">
+  <class
+    name="waypoint_global_planner/WaypointGlobalPlanner"
+    type="waypoint_global_planner::WaypointGlobalPlanner"
+    base_class_type="nav_core::BaseGlobalPlanner">
+
+    <description>This is a global planner plugin for waypoint-based path generation.</description>
+  </class>
+</library>
