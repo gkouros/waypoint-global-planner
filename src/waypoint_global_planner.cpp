@@ -38,6 +38,7 @@ void WaypointGlobalPlanner::initialize(std::string name, costmap_2d::Costmap2DRO
 
     // load parameters
     pnh.param("epsilon", epsilon_, 1e-1);
+    pnh.param("waypoints_per_meter", waypoints_per_meter_, 20);
 
     // initialize publishers and subscribers
     waypoint_sub_ = pnh.subscribe("/clicked_point", 100, &WaypointGlobalPlanner::waypointCallback, this);
@@ -60,6 +61,7 @@ bool WaypointGlobalPlanner::makePlan(const geometry_msgs::PoseStamped& start_pos
   const geometry_msgs::PoseStamped& goal, std::vector<geometry_msgs::PoseStamped>& plan)
 {
   path_.poses.insert(path_.poses.begin(), start_pose);
+  interpolatePath(path_);
   plan_pub_.publish(path_);
   plan = path_.poses;
   ROS_INFO("Published global plan");
@@ -108,6 +110,36 @@ void WaypointGlobalPlanner::waypointCallback(const geometry_msgs::PointStampedCo
   }
 }
 
+void WaypointGlobalPlanner::interpolatePath(nav_msgs::Path& path)
+{
+  std::vector<geometry_msgs::PoseStamped> temp_path;
+  for (int i = 0; i < static_cast<int>(path.poses.size()-1); i++)
+  {
+    // calculate distance between two consecutive waypoints
+    double x1 = path.poses[i].pose.position.x;
+    double y1 = path.poses[i].pose.position.y;
+    double x2 = path.poses[i+1].pose.position.x;
+    double y2 = path.poses[i+1].pose.position.y;
+    double dist =  hypot(x1-x2, y1-y2);
+    int num_wpts = dist * waypoints_per_meter_;
+
+    temp_path.push_back(path.poses[i]);
+    geometry_msgs::PoseStamped p = path.poses[i];
+    for (int j = 0; j < num_wpts - 2; j++)
+    {
+      p.pose.position.x += j / num_wpts * (x2 - x1);
+      p.pose.position.y += j / num_wpts * (y2 - y1);
+      temp_path.push_back(p);
+    }
+  }
+
+  // update sequence of poses
+  for (size_t i = 0; i < temp_path.size(); i++)
+    temp_path[i].header.seq = static_cast<int>(i);
+
+  temp_path.push_back(path.poses.back());
+  path.poses = temp_path;
+}
 
 void WaypointGlobalPlanner::externalPathCallback(const nav_msgs::PathConstPtr& plan)
 {

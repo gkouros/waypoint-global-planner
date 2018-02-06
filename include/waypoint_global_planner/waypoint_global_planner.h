@@ -70,6 +70,7 @@ class WaypointGlobalPlanner : public nav_core::BaseGlobalPlanner
 
     void createAndPublishMarkersFromPath(const std::vector<geometry_msgs::PoseStamped>& path);
 
+    void interpolatePath(nav_msgs::Path& path);
 
   private:
     bool initialized_;
@@ -86,6 +87,7 @@ class WaypointGlobalPlanner : public nav_core::BaseGlobalPlanner
 
     // configuration parameters
     double epsilon_;
+    int waypoints_per_meter_;
 
     // containers
     std::vector<geometry_msgs::PoseStamped> waypoints_;
