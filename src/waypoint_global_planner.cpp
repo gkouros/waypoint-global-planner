@@ -127,8 +127,8 @@ void WaypointGlobalPlanner::interpolatePath(nav_msgs::Path& path)
     geometry_msgs::PoseStamped p = path.poses[i];
     for (int j = 0; j < num_wpts - 2; j++)
     {
-      p.pose.position.x += j / num_wpts * (x2 - x1);
-      p.pose.position.y += j / num_wpts * (y2 - y1);
+      p.pose.position.x = x1 + static_cast<double>(j) / num_wpts * (x2 - x1);
+      p.pose.position.y = y1 + static_cast<double>(j) / num_wpts * (y2 - y1);
       temp_path.push_back(p);
     }
   }
