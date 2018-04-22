@@ -1,0 +1,7 @@
+base_global_planner: "waypoint_global_planner/WaypointGlobalPlanner"
+planner_frequency: 0.0
+planner_patience: 1.0
+
+WaypointGlobalPlanner:
+  epsilon: 1e-1  # distance threshold for final waypoint
+  waypoints_per_meter: 20  # number of waypoints per meter for the interpolation of the path
