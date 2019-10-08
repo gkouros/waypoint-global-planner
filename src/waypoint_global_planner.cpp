@@ -69,7 +69,7 @@ bool WaypointGlobalPlanner::makePlan(const geometry_msgs::PoseStamped& start_pos
 }
 
 
-void WaypointGlobalPlanner::waypointCallback(const geometry_msgs::PointStampedConstPtr& waypoint)
+void WaypointGlobalPlanner::waypointCallback(const geometry_msgs::PointStamped::ConstPtr& waypoint)
 {
   if (clear_waypoints_)
   {

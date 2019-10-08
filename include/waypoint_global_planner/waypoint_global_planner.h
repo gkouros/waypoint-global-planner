@@ -5,6 +5,7 @@
 #include <costmap_2d/costmap_2d_ros.h>
 #include <costmap_2d/costmap_2d.h>
 #include <nav_core/base_global_planner.h>
+#include <geometry_msgs/PointStamped.h>
 #include <geometry_msgs/PoseStamped.h>
 #include <base_local_planner/world_model.h>
 #include <base_local_planner/costmap_model.h>
@@ -60,7 +61,7 @@ class WaypointGlobalPlanner : public nav_core::BaseGlobalPlanner
      * @brief Waypoint callback
      * @param waypoint The received waypoint
      */
-    void waypointCallback(const geometry_msgs::PointStampedConstPtr& waypoint);
+    void waypointCallback(const geometry_msgs::PointStamped::ConstPtr& waypoint);
 
     /**
      * @brief External path callback
