@@ -3,12 +3,16 @@
 #include <tf/tf.h>
 #include <nav_msgs/Path.h>
 
+
 PLUGINLIB_EXPORT_CLASS(waypoint_global_planner::WaypointGlobalPlanner, nav_core::BaseGlobalPlanner)
 
 namespace waypoint_global_planner
 {
 
-WaypointGlobalPlanner::WaypointGlobalPlanner() : costmap_ros_(NULL), initialized_(false), clear_waypoints_(false)
+WaypointGlobalPlanner::WaypointGlobalPlanner() : costmap_ros_(NULL),
+ initialized_(false),
+ clear_waypoints_(false),
+ direction_(waypoint_global_planner::SetDirection::Request::DIRECTION_FORWARDS)
 {
 }
 
@@ -23,6 +27,23 @@ WaypointGlobalPlanner::~WaypointGlobalPlanner()
 {
 }
 
+bool WaypointGlobalPlanner::setDirectionCallback(waypoint_global_planner::SetDirection::Request  &req,
+                                                 waypoint_global_planner::SetDirection::Response &res)
+{
+  direction_ = req.direction;
+  if (direction_ == waypoint_global_planner::SetDirection::Request::DIRECTION_BACKWARDS)
+  {
+    ROS_INFO("[WaypointGlobalPlanner] Robot path direction set to backwards.");
+    return true;
+  }
+  else if (direction_ == waypoint_global_planner::SetDirection::Request::DIRECTION_FORWARDS)
+  {
+    ROS_INFO("[WaypointGlobalPlanner] Robot path direction set to forwards.");
+    return true;
+  }
+  ROS_ERROR("[WaypointGlobalPlanner] Unsupported robot path direction.");
+  return false;
+}
 
 void WaypointGlobalPlanner::initialize(std::string name, costmap_2d::Costmap2DROS* costmap_ros)
 {
@@ -43,6 +64,7 @@ void WaypointGlobalPlanner::initialize(std::string name, costmap_2d::Costmap2DRO
     // initialize publishers and subscribers
     waypoint_sub_ = pnh.subscribe("/clicked_point", 100, &WaypointGlobalPlanner::waypointCallback, this);
     external_path_sub_ = pnh.subscribe("external_path", 1, &WaypointGlobalPlanner::externalPathCallback, this);
+    service_ = nh.advertiseService("set_direction", &WaypointGlobalPlanner::setDirectionCallback, this);
     waypoint_marker_pub_ = pnh.advertise<visualization_msgs::MarkerArray>("waypoints", 1);
     goal_pub_ = nh.advertise<geometry_msgs::PoseStamped>("/move_base_simple/goal", 1);
     plan_pub_ = pnh.advertise<nav_msgs::Path>("global_plan", 1);
@@ -60,12 +82,28 @@ void WaypointGlobalPlanner::initialize(std::string name, costmap_2d::Costmap2DRO
 bool WaypointGlobalPlanner::makePlan(const geometry_msgs::PoseStamped& start_pose,
   const geometry_msgs::PoseStamped& goal, std::vector<geometry_msgs::PoseStamped>& plan)
 {
-  path_.poses.insert(path_.poses.begin(), start_pose);
+  geometry_msgs::PoseStamped start_pose_cpy(start_pose);
+  setOrientationAlongWay(&start_pose_cpy.pose, &path_.poses.begin()->pose);
+  path_.poses.insert(path_.poses.begin(), start_pose_cpy);
   interpolatePath(path_);
   plan_pub_.publish(path_);
   plan = path_.poses;
-  ROS_INFO("Published global plan");
+  ROS_INFO("[WaypointGlobalPlanner] Published global plan");
   return true;
+}
+
+void WaypointGlobalPlanner::setOrientationAlongWay(geometry_msgs::Pose *p1, const geometry_msgs::Pose *p2)
+{
+  double yaw = 0.0;
+  if (direction_ == waypoint_global_planner::SetDirection::Request::DIRECTION_BACKWARDS)
+  {
+    yaw = atan2(p1->position.y - p2->position.y, p1->position.x - p2->position.x);
+  }
+  else
+  {
+    yaw = atan2(p2->position.y - p1->position.y, p2->position.x - p1->position.x);
+  }
+  p1->orientation = tf::createQuaternionMsgFromYaw(yaw);
 }
 
 
@@ -91,10 +129,7 @@ void WaypointGlobalPlanner::waypointCallback(const geometry_msgs::PointStamped::
 
   geometry_msgs::Pose *p1 = &(waypoints_.end()-2)->pose;
   geometry_msgs::Pose *p2 = &(waypoints_.end()-1)->pose;
-
-  // calculate orientation of waypoints
-  double yaw = atan2(p2->position.y - p1->position.y, p2->position.x - p1->position.x);
-  p1->orientation = tf::createQuaternionMsgFromYaw(yaw);
+  setOrientationAlongWay(p1, p2);
 
   // calculate distance between latest two waypoints and check if it surpasses the threshold epsilon
   double dist = hypot(p1->position.x - p2->position.x, p1->position.y - p2->position.y);
@@ -106,7 +141,6 @@ void WaypointGlobalPlanner::waypointCallback(const geometry_msgs::PointStamped::
     path_.poses.insert(path_.poses.end(), waypoints_.begin(), waypoints_.end());
     goal_pub_.publish(waypoints_.back());
     clear_waypoints_ = true;
-    ROS_INFO("Published goal pose");
   }
 }
 
