@@ -11,6 +11,7 @@
 #include <base_local_planner/costmap_model.h>
 #include <visualization_msgs/MarkerArray.h>
 #include <nav_msgs/Path.h>
+#include "waypoint_global_planner/SetDirection.h"
 
 namespace waypoint_global_planner
 {
@@ -64,6 +65,14 @@ class WaypointGlobalPlanner : public nav_core::BaseGlobalPlanner
     void waypointCallback(const geometry_msgs::PointStamped::ConstPtr& waypoint);
 
     /**
+     * @brief Planning direction service callback
+     * @param req Information if robot should move forwards or backwards
+     * @param res Empty response
+     */
+    bool setDirectionCallback(waypoint_global_planner::SetDirection::Request  &req,
+                              waypoint_global_planner::SetDirection::Response &res);
+
+    /**
      * @brief External path callback
      * @param plan The received plan
      */
@@ -81,15 +90,24 @@ class WaypointGlobalPlanner : public nav_core::BaseGlobalPlanner
      */
     void interpolatePath(nav_msgs::Path& path);
 
+    /**
+     * @brief Sets orientation of the first point (p1) parallel to the way between p1 and p2
+     * @param p1 first point on the way, its orientation is changed
+     * @param p2 second point on the way
+     */
+    void setOrientationAlongWay(geometry_msgs::Pose *p1, const geometry_msgs::Pose *p2);
+
   private:
     bool initialized_;  //!< flag indicating the planner has been initialized
+    u_int8_t direction_;  //!< moving direction [forwards (0) or backwards (1)]
     costmap_2d::Costmap2DROS* costmap_ros_;  //!< costmap ros wrapper
     costmap_2d::Costmap2D* costmap_;  //!< costmap container
     base_local_planner::WorldModel* world_model_;  //!< world model
 
-    // subscribers and publishers
+    // subscribers, services and publishers
     ros::Subscriber waypoint_sub_;  //!< subscriber of manually inserted waypoints
     ros::Subscriber external_path_sub_;  //!< subscriber of external input path
+    ros::ServiceServer service_;
     ros::Publisher waypoint_marker_pub_;  //!< publisher of waypoint visualization markers
     ros::Publisher goal_pub_;  //!< publisher of goal corresponding to the final waypoint
     ros::Publisher plan_pub_;  //!< publisher of the global plan

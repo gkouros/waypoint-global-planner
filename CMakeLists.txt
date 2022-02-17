@@ -14,6 +14,17 @@ find_package(catkin REQUIRED COMPONENTS
   roscpp
   tf
   visualization_msgs
+  message_generation
+)
+
+add_service_files(
+  FILES
+  SetDirection.srv
+)
+
+generate_messages(
+  DEPENDENCIES
+  std_msgs
 )
 
 include_directories(include ${catkin_INCLUDE_DIRS})
@@ -33,7 +44,6 @@ catkin_package(
     tf
     visualization_msgs
 )
-
 add_library(waypoint_global_planner src/waypoint_global_planner.cpp)
 add_dependencies(waypoint_global_planner ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(waypoint_global_planner ${catkin_LIBRARIES})
